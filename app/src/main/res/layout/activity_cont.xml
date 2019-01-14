@@ -11,7 +11,16 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Profile"/>
-
+    <EditText
+        android:id="@+id/etContUserId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter the user ID here"/>
+    <EditText
+        android:id="@+id/etContProID"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter the project ID here"/>
     <android.support.v7.widget.RecyclerView
         android:id="@+id/rvContProjects"
         android:layout_width="match_parent"

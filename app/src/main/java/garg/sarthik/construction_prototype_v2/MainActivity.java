@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
     Button btnRegUser;
     Button btnRegCont;
 
-    FirebaseFirestore firestore;
+    public static FirebaseFirestore firestore;
     boolean exists;
 
     @Override

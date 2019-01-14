@@ -13,6 +13,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -20,11 +21,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UserProjectActivity extends AppCompatActivity implements LocationListener {
 
@@ -51,6 +56,9 @@ public class UserProjectActivity extends AppCompatActivity implements LocationLi
     String loginType;
 
     FirebaseFirestore firestore;
+    CollectionReference userRef;
+    CollectionReference contRef;
+    private String TAG = "Submitting project";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,8 +68,13 @@ public class UserProjectActivity extends AppCompatActivity implements LocationLi
         project = getIntent().getParcelableExtra(Constants.PRO_PARCEL);
         loginType = getIntent().getStringExtra(Constants.PARCEL_TYPE);
 
+        Log.e(TAG, "onCreate: " + project.getProStatus());
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        FirebaseApp.initializeApp(this);
         firestore = FirebaseFirestore.getInstance();
+        userRef = firestore.collection(Constants.COL_USER)
+                .document(project.getUser().getUserId())
+                .collection(Constants.COL_PRO);
 
         tvProStatus = findViewById(R.id.tvProStatus);
 
@@ -85,14 +98,16 @@ public class UserProjectActivity extends AppCompatActivity implements LocationLi
         etProDate.setEnabled(false);
         etUserName.setEnabled(false);
         etUserId.setEnabled(false);
+
         btnReport.setVisibility(View.INVISIBLE);
+
+        tvProStatus.setText(project.getProStatus());
 
         etUserName.setText(project.getUser().getUserName());
         etUserId.setText(project.getUser().getUserId());
 
         if (project.getProStatus().equals(Constants.PRO_STATUS_INITIALISE)) {
 
-            tvProStatus.setText(project.getProStatus());
             btnSubmit.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -106,30 +121,32 @@ public class UserProjectActivity extends AppCompatActivity implements LocationLi
                         Toast.makeText(UserProjectActivity.this, "Editable fields required to fill", Toast.LENGTH_SHORT).show();
                         return;
                     }
-
                     project.setProId(proId);
                     project.setProName(proName);
                     project.setContractor(new Contractor(contName, contId));
                     project.setProStatus(Constants.PRO_STATUS_PENDING);
 
+                    contRef = firestore.collection(Constants.COL_CONT)
+                            .document(project.getContractor().getContId())
+                            .collection(Constants.COL_PRO);
+
                     firestore.collection(Constants.COL_CONT)
                             .document(project.getContractor().getContId()).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                         @Override
                         public void onSuccess(DocumentSnapshot documentSnapshot) {
-                            if(documentSnapshot.exists())
-                            {
-                                firestore.collection(Constants.COL_USER)
-                                        .document(project.getUser().getUserId())
-                                        .collection(Constants.COL_PRO)
-                                        .document(project.getProId()).set(project);
-                                firestore.collection(Constants.COL_CONT)
-                                        .document(project.getContractor().getContId())
-                                        .collection(Constants.COL_PRO)
-                                        .document(project.getProId()).set(project);
+                            if (documentSnapshot.exists()) {
+                                userRef.document(project.getProId()).set(project);
+                                userRef.document(project.getProId())
+                                        .collection(Constants.COL_TIME)
+                                        .document(DateFormat.getDateTimeInstance().format(new Date())).set(new Report(DateFormat.getDateTimeInstance().format(new Date()), null, Constants.PRO_STATUS_PENDING));
+                                Map<String, String> proData = new HashMap<>();
+                                proData.put(Constants.PRO_USERID, project.getUser().getUserId());
+                                proData.put(Constants.PRO_ID, project.getProId());
+                                contRef.document(project.getProId()).set(proData);
 
                                 Toast.makeText(UserProjectActivity.this, "Project submitted successfully", Toast.LENGTH_SHORT).show();
-                            }
-                            else
+                                finish();
+                            } else
                                 Toast.makeText(UserProjectActivity.this, "No Contractor exist with this ID", Toast.LENGTH_SHORT).show();
                         }
                     });
@@ -144,17 +161,34 @@ public class UserProjectActivity extends AppCompatActivity implements LocationLi
             etContId.setEnabled(false);
             etProName.setEnabled(false);
             etProId.setEnabled(false);
+            etContId.setText(project.getContractor().getContId());
+            etContName.setText(project.getContractor().getContName());
+            etProId.setText(project.getProId());
+            etProName.setText(project.getProName());
 
-            btnSubmit.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
+            if (loginType.equals(Constants.COL_CONT))
+                btnSubmit.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
 
-                    requestLocation();
-                }
-            });
+                        requestLocation();
+                    }
+                });
+            else
+                Toast.makeText(this, "Contractor needs to start the project", Toast.LENGTH_SHORT).show();
         }
 
         if (project.getProStatus().equals(Constants.PRO_STATUS_IN_PROGRESS)) {
+
+
+            etContId.setText(project.getContractor().getContId());
+            etContName.setText(project.getContractor().getContName());
+            etProId.setText(project.getProId());
+            etProName.setText(project.getProName());
+            etProDate.setText(project.getProDate());
+            etProLat.setText("Latitude: " + Double.toString(project.getProLatitude()));
+            etProLong.setText("Longitude: " + Double.toString(project.getProLongitude()));
+
 
             btnSubmit.setText("Finish Project");
             if (loginType.equals(Constants.COL_CONT))
@@ -168,10 +202,12 @@ public class UserProjectActivity extends AppCompatActivity implements LocationLi
                 @Override
                 public void onClick(View v) {
                     project.setProStatus(Constants.PRO_STATUS_FINISHED);
-                    firestore.collection(Constants.COL_USER)
-                            .document(project.getUser().getUserId())
-                            .collection(Constants.COL_PRO)
-                            .document(project.getProId()).set(project);
+                    userRef.document(project.getProId()).set(project);
+                    userRef.document(project.getProId())
+                            .collection(Constants.COL_TIME)
+                            .document(DateFormat.getDateTimeInstance().format(new Date())).set(new Report(DateFormat.getDateTimeInstance().format(new Date()), null, project.getProStatus()));
+                    finish();
+
                 }
             });
 
@@ -182,6 +218,24 @@ public class UserProjectActivity extends AppCompatActivity implements LocationLi
                 }
             });
 
+        }
+        if (project.getProStatus().equals(Constants.PRO_STATUS_FINISHED)) {
+
+            etContName.setEnabled(false);
+            etContId.setEnabled(false);
+            etProName.setEnabled(false);
+            etProId.setEnabled(false);
+
+            etContId.setText(project.getContractor().getContId());
+            etContName.setText(project.getContractor().getContName());
+            etProId.setText(project.getProId());
+            etProName.setText(project.getProName());
+            etProDate.setText(project.getProDate());
+            etProLat.setText("Latitude: " + Double.toString(project.getProLatitude()));
+            etProLong.setText("Longitude: " + Double.toString(project.getProLongitude()));
+
+            btnReport.setVisibility(View.INVISIBLE);
+            btnSubmit.setEnabled(false);
         }
 
     }
@@ -226,11 +280,15 @@ public class UserProjectActivity extends AppCompatActivity implements LocationLi
         project.setProLongitude(location.getLongitude());
         project.setProDate(DateFormat.getDateTimeInstance().format(new Date()));
         project.setProStatus(Constants.PRO_STATUS_IN_PROGRESS);
-
-        firestore.collection(Constants.COL_USER)
-                .document(project.getUser().getUserId())
-                .collection(Constants.COL_PRO)
-                .document(project.getProId()).set(project);
+        userRef.document(project.getProId())
+                .collection(Constants.COL_TIME)
+                .document(DateFormat.getDateTimeInstance().format(new Date())).set(new Report(DateFormat.getDateTimeInstance().format(new Date()), null, project.getProStatus()));
+        userRef.document(project.getProId()).set(project);
+        Toast.makeText(this, "Project is now started", Toast.LENGTH_SHORT).show();
+        etProDate.setText(project.getProDate());
+        etProLat.setText("Latitude: " + Double.toString(project.getProLatitude()));
+        etProLong.setText("Longitude: " + Double.toString(project.getProLongitude()));
+        finish();
 
     }
 

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".UserProjectActivity">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/tvProStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:gravity="center"
+            android:text="Project Status"
+            android:textSize="20sp" />
+
+        <EditText
+            android:id="@+id/etProName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter the project name here" />
+
+        <EditText
+            android:id="@+id/etProId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter the project ID here" />
+
+        <EditText
+            android:id="@+id/etUserName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter the user name here" />
+
+        <EditText
+            android:id="@+id/etUserId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter the user ID here" />
+
+        <EditText
+            android:id="@+id/etContName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter the contractor name here" />
+
+        <EditText
+            android:id="@+id/etContId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter the contractor ID here" />
+
+        <EditText
+            android:id="@+id/etProDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Date will come here" />
+
+        <EditText
+            android:id="@+id/etProLat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Latitude comes here" />
+
+        <EditText
+            android:id="@+id/etProLong"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Longitude comes here" />
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/rvProTimeline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:id="@+id/btnSubmit"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:text="Submit" />
+        <Button
+            android:id="@+id/btnReport"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:text="Report"/>
+    </LinearLayout>
+</LinearLayout>
